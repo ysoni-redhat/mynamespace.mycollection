@@ -1,2 +1,16 @@
 ---
-# defaults file for roles/bastion
+# defaults file for satellite6-17-bfx
+GUID: "{{ guid }}"
+
+# Satellite details
+satellite_admin_user: "admin"
+satellite_admin_password: "redhat"
+org_name: "Default Organization"
+environment: "Library"
+
+# Capsule details (optional)
+capsule_fqdn: "capsule.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local"
+capsule_cert_tar: "/root/{{ capsule_fqdn }}.tar"
+
+# Satellite FQDN
+satellite_fqdn: "satellite.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local"

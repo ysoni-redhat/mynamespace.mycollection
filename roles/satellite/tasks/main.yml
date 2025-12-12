@@ -1,6 +1,78 @@
 ---
-# tasks file for roles/bastion
-- name: Create a file inside /tmp
+# tasks file for satellite6-17-bfx
+#- name: Enable Satellite Capsule Repository Set
+#  command: >
+#    hammer repository-set enable
+#    --product "Red Hat Satellite Capsule"
+#    --name "Red Hat Satellite Capsule 6.17 for RHEL 9 x86_64 (RPMs)"
+#    --organization "{{ org_name }}"
+#  register: repo_enable
+#  changed_when: "'enabled' in repo_enable.stdout"
+
+#- name: Synchronize Satellite Capsule Product
+#  command: >
+#    hammer product synchronize
+#    --name "Red Hat Satellite Capsule"
+#    --organization "{{ org_name }}"
+#  register: sync_output
+
+- name: Run satellite-change-hostname
+  command: >
+    satellite-change-hostname {{ satellite_fqdn }}
+    --username {{ satellite_admin_user }}
+    --password {{ satellite_admin_password }}
+    --assumeyes
+  ignore_errors: true
+
+- name: Set Satellite Hostname
+  command: hostnamectl set-hostname satellite.lab.sandbox-blpw4-ocp4-cluster.svc.cluster.local
+
+- name: Run satellite-change-hostname
+  command: >
+    satellite-change-hostname {{ satellite_fqdn }}
+    --username {{ satellite_admin_user }}
+    --password {{ satellite_admin_password }}
+    --assumeyes
+
+- name: Clean old subscription-manager data
+  command: subscription-manager clean
+
+- name: Remove existing katello-ca-consumer RPM
+  yum:
+    name: "katello-ca-consumer*"
+    state: absent
+
+- name: Install new CA consumer package
+  command: >
+    rpm -Uvh http://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm
+
+- name: Register Satellite again
+  command: >
+    subscription-manager register
+    --force
+    --username {{ satellite_admin_user }}
+    --password {{ satellite_admin_password }}
+  tags: here
+
+- name: Refresh subscription-manager
+  command: subscription-manager refresh
+  tags: here
+
+- name: Show yum repolist
+  command: yum repolist
+  register: repolist_output
+  tags: here
+
+- name: Generate capsule certificates
+  command: >
+    capsule-certs-generate
+    --foreman-proxy-fqdn {{ capsule_fqdn }}
+    --certs-tar {{ capsule_cert_tar }}
+  tags: here
+
+- name: Copy capsule cert tarball to capsule server
   copy:
-    content: "This file is created by bastion role"
-    dest: /tmp/satellite_test.txt
+    src: "{{ capsule_cert_tar }}"
+    dest: "~/"
+  delegate_to: "{{ capsule_fqdn }}"
+  tags: here
