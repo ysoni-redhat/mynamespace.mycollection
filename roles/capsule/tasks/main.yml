@@ -1,6 +1,79 @@
 ---
-# tasks file for roles/bastion
-- name: Create a file inside /tmp
-  copy:
-    content: "This file is created by bastion role"
-    dest: /tmp/capsule_test.txt
+# tasks file for satellite6.17-capsule-bfx-lab
+- name: Add capsule entry to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "10.0.2.2    capsule.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local capsule"
+    state: present
+  become: true
+
+- name: Remove katello-ca-consumer packages
+  command: yum remove -y katello-ca-consumer*
+
+- name: Install new katello-ca-consumer RPM
+  command: >
+    rpm -Uvh http://satellite.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local/pub/katello-ca-consumer-latest.noarch.rpm
+
+- name: subscription-manager clean
+  command: subscription-manager clean
+
+- name: Register system to Satellite
+  command: >
+    subscription-manager register
+    --force
+    --username {{ satellite_admin_user }}
+    --password {{ satellite_admin_password }}
+
+- name: subscription-manager refresh
+  command: subscription-manager refresh
+
+- name: Enable Satellite Capsule repo
+  command: subscription-manager repos --enable=satellite-capsule-6.17-for-rhel-9-x86_64-rpms
+
+- name: Install satellite-capsule
+  yum:
+    name: satellite-capsule
+    state: present
+
+- name: Install chrony
+  yum:
+    name: chrony 
+    state: present
+  ignore_errors: true
+
+- name: Get OAuth consumer key from Satellite
+  command: >
+    ssh {{ satellite_host }} "sudo grep oauth_consumer_key /etc/foreman/settings.yaml | cut -d ':' -f 3"
+  register: oauth_key_raw
+
+- name: Set oauth_consumer_key fact
+  set_fact:
+    oauth_consumer_key: "{{ oauth_key_raw.stdout | trim }}"
+
+- name: Get OAuth consumer secret from Satellite
+  command: >
+    ssh {{ satellite_host }} "sudo grep oauth_consumer_secret /etc/foreman/settings.yaml | cut -d ':' -f 3"
+  register: oauth_secret_raw
+
+- name: Set oauth_consumer_secret fact
+  set_fact:
+    oauth_consumer_secret: "{{ oauth_secret_raw.stdout | trim }}"
+
+- name: Show retrieved OAuth values
+  debug:
+    msg:
+      - "OAuth Key: {{ oauth_consumer_key }}"
+      - "OAuth Secret: {{ oauth_consumer_secret }}"
+
+- name: Run satellite-installer for Capsule
+  command: >
+    satellite-installer --scenario capsule
+    --certs-tar-file "/root/capsule.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local.tar"
+    --foreman-proxy-register-in-foreman "true"
+    --foreman-proxy-foreman-base-url "https://satellite.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local"
+    --foreman-proxy-trusted-hosts "satellite.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local"
+    --foreman-proxy-trusted-hosts "capsule.lab.sandbox-{{ GUID }}-ocp4-cluster.svc.cluster.local"
+    --foreman-proxy-oauth-consumer-key "{{ oauth_consumer_key }}"
+    --foreman-proxy-oauth-consumer-secret "{{ oauth_consumer_secret }}"
+  become: true
+

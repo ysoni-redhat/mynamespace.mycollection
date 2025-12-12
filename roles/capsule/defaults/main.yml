@@ -1,2 +1,8 @@
 ---
-# defaults file for roles/bastion
+# defaults file for satellite6.17-capsule-bfx-lab
+GUID: "{{ guid }}"
+satellite_fqdn: "satellite.lab.sandbox-{{ guid }}-ocp4-cluster.svc_cluster.local"
+capsule_fqdn: "capsule.lab.sandbox-{{ guid }}-ocp4-cluster.svc_cluster.local"
+satellite_admin_user: "admin"
+satellite_admin_password: "redhat"
+satellite_host: "satellite"     # Inventory hostname for satellite server
