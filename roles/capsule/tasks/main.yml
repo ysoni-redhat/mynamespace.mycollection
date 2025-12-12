@@ -1,0 +1,6 @@
+---
+# tasks file for roles/bastion
+- name: Create a file inside /tmp
+  copy:
+    content: "This file is created by bastion role"
+    dest: /tmp/capsule_test.txt
