@@ -70,9 +70,9 @@
     --certs-tar {{ capsule_cert_tar }}
   tags: here
 
-- name: Copy capsule cert tarball to capsule server
+- name: Copy capsule cert tarball from Satellite to Capsule
   copy:
     src: "{{ capsule_cert_tar }}"
-    dest: "~/"
-  delegate_to: "capsule"
-  tags: here
+    dest: /root/
+    remote_src: true
+  delegate_to: capsule
