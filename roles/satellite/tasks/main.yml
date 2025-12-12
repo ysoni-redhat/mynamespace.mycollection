@@ -1,20 +1,20 @@
 ---
 # tasks file for satellite6-17-bfx
-#- name: Enable Satellite Capsule Repository Set
-#  command: >
-#    hammer repository-set enable
-#    --product "Red Hat Satellite Capsule"
-#    --name "Red Hat Satellite Capsule 6.17 for RHEL 9 x86_64 (RPMs)"
-#    --organization "{{ org_name }}"
-#  register: repo_enable
-#  changed_when: "'enabled' in repo_enable.stdout"
+- name: Enable Satellite Capsule Repository Set
+  command: >
+    hammer repository-set enable
+    --product "Red Hat Satellite Capsule"
+    --name "Red Hat Satellite Capsule 6.17 for RHEL 9 x86_64 (RPMs)"
+    --organization "{{ org_name }}"
+  register: repo_enable
+  changed_when: "'enabled' in repo_enable.stdout"
 
-#- name: Synchronize Satellite Capsule Product
-#  command: >
-#    hammer product synchronize
-#    --name "Red Hat Satellite Capsule"
-#    --organization "{{ org_name }}"
-#  register: sync_output
+- name: Synchronize Satellite Capsule Product
+  command: >
+    hammer product synchronize
+    --name "Red Hat Satellite Capsule"
+    --organization "{{ org_name }}"
+  register: sync_output
 
 - name: Run satellite-change-hostname
   command: >
@@ -74,5 +74,5 @@
   copy:
     src: "{{ capsule_cert_tar }}"
     dest: "~/"
-  delegate_to: "{{ capsule_fqdn }}"
+  delegate_to: "capsule"
   tags: here
