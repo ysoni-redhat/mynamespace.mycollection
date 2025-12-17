@@ -91,19 +91,10 @@
   changed_when: "'Deleted host' in delete_satellite_host.stdout"
   failed_when: false
 
-- name: Get capsule hosts matching pattern
+- name: Delete specific Capsule host
   command: >
-    hammer host list
-    --search "name ~ capsule.*.internal"
-    --fields name
-    --csv
-  register: capsule_hosts
-
-- name: Delete old capsule hosts
-  command: >
-    hammer host delete --name "{{ item }}"
-  loop: "{{ capsule_hosts.stdout_lines[1:] }}"
-  when: capsule_hosts.stdout_lines | length > 1
-  register: delete_capsule_hosts
-  changed_when: "'Deleted host' in delete_capsule_hosts.stdout"
+    hammer host delete
+    --name capsule.{{ guid }}.internal-*
+  register: delete_capsule_host
+  changed_when: "'Deleted host' in delete_capsule_host.stdout"
   failed_when: false
