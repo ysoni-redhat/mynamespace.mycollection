@@ -94,7 +94,7 @@
 - name: Delete specific Capsule host
   command: >
     hammer host delete
-    --name capsule.{{ guid }}.internal-*
+    --name capsule.{{ GUID }}.internal-*
   register: delete_capsule_host
   changed_when: "'Deleted host' in delete_capsule_host.stdout"
   failed_when: false
